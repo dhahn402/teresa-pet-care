@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://newbernpetsitting.com/sitemap.xml
+# Draft awaiting Teresa's approval — not for indexing yet.
+Disallow: /
+
+Sitemap: https://teresa.beartownpack.com/sitemap.xml
