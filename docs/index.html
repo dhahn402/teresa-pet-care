@@ -162,6 +162,13 @@ h2{
 .btn.call{background:var(--clay);border-color:var(--clay);color:#fff}
 .btn.pending{background:transparent;border-style:dashed;border-color:var(--clay);color:var(--clay);cursor:not-allowed}
 
+
+/* ---------- her photo ---------- */
+.pet{margin:34px 0 0;padding:0}
+.pet img{width:100%;max-width:400px;height:auto;border-radius:16px;display:block;margin:0 auto;
+  box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.pet figcaption{max-width:430px;margin:13px auto 0;text-align:center;font-size:14.5px;line-height:1.6;
+  color:var(--ink-soft)}
 /* ---------- music ---------- */
 .music{
   display:inline-flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);
@@ -314,6 +321,13 @@ footer a{color:var(--moss);font-weight:500}
     </div>
   </section>
 
+  <figure class="pet">
+    <img src="img/reese.jpg" alt="Reese, a hound, sitting on the New Bern waterfront at sunset"
+         width="558" height="800" loading="lazy" decoding="async">
+    <figcaption>This is <b>Reese</b>. She belongs to the family behind the Bear Town Pack, and she is
+      one of the dogs I look after.</figcaption>
+  </figure>
+
   <section>
     <h2>Why people hand me their keys</h2>
     <div class="why">
@@ -420,9 +434,9 @@ footer a{color:var(--moss);font-weight:500}
       A share of what this family builds goes to the SPCA. Adopt if you can, foster if you
       can't, and give to your local shelter either way.
     </p>
-    <button class="music" id="music" aria-pressed="false" aria-label="Play a little music">
+    <button class="music" id="music" aria-pressed="false" aria-label="Play something chill">
       <span class="bars"><i></i><i></i><i></i><i></i></span>
-      <span id="musiclabel">Play a little music</span>
+      <span id="musiclabel">Play something chill</span>
     </button>
   </section>
 
@@ -628,7 +642,12 @@ if (bar) {
 var btn = document.getElementById("music");
 var label = document.getElementById("musiclabel");
 var ctx = null, timer = null, master = null, pad = null, padGain = null;
-var SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+/* D-minor pentatonic + a 9th — the interval set almost every lo-fi track lives in.
+   Minor, warm, never resolves too hard. */
+var SCALE = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33, 698.46, 783.99];
+/* the chord loop underneath: Dm9 - Bb - F - Am, two bars each, the classic turnaround */
+var CHORDS = [[146.83,220.00,329.63],[116.54,174.61,293.66],[174.61,261.63,349.23],[110.00,164.81,261.63]];
+var bar = 0;
 var step = 0;
 
 function note(freq, when, dur, vol){
@@ -642,13 +661,51 @@ function note(freq, when, dur, vol){
   o.start(when); o.stop(when + dur + 0.05);
 }
 
+/* a soft brushed kick/snare — filtered noise, the thing that makes it lo-fi
+   rather than ambient. Quiet on purpose; it should sit under a conversation. */
+function hit(when, freq, dur, vol, type){
+  var o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(freq, when);
+  o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * 0.4), when + dur);
+  g.gain.setValueAtTime(vol, when);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(master);
+  o.start(when); o.stop(when + dur + 0.02);
+}
+
+function chord(when, freqs, vol){
+  for (var k = 0; k < freqs.length; k++){
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "triangle";
+    /* a few cents flat, drifting — the detune is what stops it sounding like a ringtone */
+    o.frequency.value = freqs[k] * (1 - 0.0016 + Math.random() * 0.0032);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(vol, when + 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 2.4);
+    o.connect(g); g.connect(master);
+    o.start(when); o.stop(when + 2.5);
+  }
+}
+
 function tick(){
   var t = ctx.currentTime + 0.06;
-  /* a wandering melody — never the same twice, always in key */
-  var i = Math.floor(Math.random() * SCALE.length);
-  note(SCALE[i], t, 1.5, 0.16);
-  if (step % 4 === 0) note(SCALE[Math.max(0, i - 2)] / 2, t, 2.2, 0.09);
-  if (step % 8 === 3) note(SCALE[Math.min(SCALE.length - 1, i + 2)], t + 0.22, 1.1, 0.09);
+
+  /* chords change every 4 beats */
+  if (step % 4 === 0){
+    chord(t, CHORDS[bar % CHORDS.length], 0.055);
+    bar++;
+  }
+
+  /* the beat: kick on 1 and 3, brushed snare on 2 and 4, swung a touch late */
+  var beat = step % 4;
+  if (beat === 0 || beat === 2) hit(t, 92, 0.20, 0.16);
+  if (beat === 1 || beat === 3) hit(t + 0.012, 210, 0.075, 0.045, "triangle");
+
+  /* melody sits back — it plays on some beats, not all. Space is the genre. */
+  if (Math.random() < 0.55){
+    var i = Math.floor(Math.random() * SCALE.length);
+    note(SCALE[i], t + (beat % 2 ? 0.09 : 0), 1.25, 0.085);
+  }
   step++;
 }
 
@@ -659,18 +716,18 @@ function start(){
   master = ctx.createGain();
   master.gain.value = 0.5;
   var soft = ctx.createBiquadFilter();       /* take the glassy edge off */
-  soft.type = "lowpass"; soft.frequency.value = 2200;
+  soft.type = "lowpass"; soft.frequency.value = 1500;   /* darker — the tape-warmth of the genre */
   master.connect(soft); soft.connect(ctx.destination);
 
   pad = ctx.createOscillator(); padGain = ctx.createGain();
-  pad.type = "sine"; pad.frequency.value = 130.81;   /* low C, felt not heard */
+  pad.type = "sine"; pad.frequency.value = 73.42;    /* low D, felt not heard */
   padGain.gain.setValueAtTime(0.0001, ctx.currentTime);
   padGain.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 1.5);
   pad.connect(padGain); padGain.connect(soft);
   pad.start();
 
   tick();
-  timer = setInterval(tick, 620);
+  timer = setInterval(tick, 790);   /* ~76 bpm, the unhurried end of lo-fi */
   return true;
 }
 
@@ -690,7 +747,7 @@ function stop(){
 if (btn){
   btn.addEventListener("click", function(){
     var on = btn.getAttribute("aria-pressed") === "true";
-    if (on){ stop(); btn.setAttribute("aria-pressed","false"); label.textContent = "Play a little music"; }
+    if (on){ stop(); btn.setAttribute("aria-pressed","false"); label.textContent = "Play something chill"; }
     else if (start()){ btn.setAttribute("aria-pressed","true"); label.textContent = "That\u2019s enough, thanks"; }
   });
   window.addEventListener("pagehide", stop);
