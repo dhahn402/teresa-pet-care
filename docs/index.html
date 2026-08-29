@@ -7,7 +7,6 @@
 <meta name="description" content="Dog walking, drop-in visits, overnight house sitting and cat care in New Bern and Craven County. Kennel and veterinary-office experience. Medication, seniors and shy cats welcome.">
 <link rel="canonical" href="https://newbernpetsitting.com/">
 <meta name="theme-color" content="#2F6B4A">
-
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Teresa's Pet Care">
 <meta property="og:title" content="Pet sitting &amp; dog walking in New Bern, NC">
@@ -18,8 +17,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://newbernpetsitting.com/og-image.png">
-
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Karla:wght@400;500;700&display=swap">
@@ -251,7 +249,7 @@ footer a{color:var(--moss);font-weight:500}
 <body>
 
 
-<div class="draft">
+<div class="draft draft-only">
   <b>Draft for Teresa to approve.</b> Everything marked <b>NEEDS TERESA</b> is a blank
   we did not guess — rates, phone, and how far she travels are hers to set.
 </div>
@@ -442,7 +440,7 @@ footer a{color:var(--moss);font-weight:500}
       <span>Vanceboro</span>
       <span>Cove City</span>
     </div>
-    <p style="font-size:14px;color:var(--ink-faint);margin-top:14px">
+    <p class="draft-only" style="font-size:14px;color:var(--ink-faint);margin-top:14px">
       <b style="color:var(--clay)">NEEDS TERESA</b> &mdash; how far out she will actually drive, and
       whether there is a mileage charge past a certain point.
     </p>
@@ -483,8 +481,8 @@ footer a{color:var(--moss);font-weight:500}
       <details><summary>Are you insured?</summary>
         <div class="a"><p>Bookings made through Rover are covered by their protection while the booking is
           active, which is one reason I keep booking there for now.</p>
-          <p><b style="color:var(--clay)">NEEDS TERESA</b> &mdash; whether she carries her own pet-sitter
-          insurance as well. Say only what is true.</p></div></details>
+          <p class="draft-only"><b style="color:var(--clay)">NEEDS TERESA</b> &mdash; whether she carries
+          her own pet-sitter insurance as well. Say only what is true.</p></div></details>
 
       <details><summary>Can we meet before I book?</summary>
         <div class="a"><p>Please do. A short meet-and-greet before the first booking is free, and it is
@@ -560,7 +558,7 @@ footer a{color:var(--moss);font-weight:500}
       insurance, and my reviews are already there.</p>
     <div class="cta">
       <a class="btn" href="https://www.rover.com/promos/teriso17036/?utm_medium=direct&amp;utm_campaign=977262825&amp;utm_content=ssp&amp;utm_source=sit-link&amp;utm_term=N0X1l1LN" rel="noopener">Book on Rover</a>
-      <div class="fine"><b style="color:var(--clay)">NEEDS TERESA</b> — a phone number or email
+      <div class="fine draft-only"><b style="color:var(--clay)">NEEDS TERESA</b> — a phone number or email
         for people who would rather text than use an app, and how far outside New Bern you'll travel.</div>
     </div>
   </section>
@@ -588,6 +586,23 @@ footer a{color:var(--moss);font-weight:500}
    ------------------------------------------------------------------ */
 var PHONE = "";                       /* e.g. "252 555 0134" */
 
+/* DRAFT = true shows the orange banner and every NEEDS TERESA note — those are
+   notes to David, not things a customer should ever read. Set it to false and
+   the page becomes publishable: the notes disappear, the rate placeholders
+   become an honest "Ask for a quote", and the Text/Call buttons simply do not
+   render until PHONE is filled in. Nothing is invented either way. */
+var DRAFT = false;
+
+if (!DRAFT) {
+  Array.prototype.forEach.call(document.querySelectorAll(".draft-only"), function(el){
+    el.parentNode.removeChild(el);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".fill"), function(el){
+    el.textContent = "Ask for a quote";
+    el.style.color = "var(--moss)";
+  });
+}
+
 var bar = document.getElementById("contactbar");
 if (bar) {
   var digits = PHONE.replace(/[^0-9]/g, "");
@@ -596,11 +611,11 @@ if (bar) {
     bar.innerHTML =
       '<a class="btn call" href="sms:' + tel + '">Text me now</a>' +
       '<a class="btn ghost" href="tel:' + tel + '">Call me now</a>';
-  } else {
+  } else if (DRAFT) {
     bar.innerHTML =
       '<span class="btn pending" role="note">Text me now — needs Teresa\u2019s number</span>' +
       '<span class="btn pending" role="note">Call me now — needs Teresa\u2019s number</span>';
-  }
+  }                                   /* public + no number = no buttons at all */
 }
 
 /* ------------------------------------------------------------------
